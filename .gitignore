@@ -1,0 +1,20 @@
+# 1. Visual Studio 숨김 폴더 및 빌드 폴더
+.vs/
+x64/
+Debug/
+Release/
+
+# 2. 사용자 설정 및 임시 파일
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.db
+*.ipch
+*.aps
+
+# 3. 컴파일 결과물
+*.obj
+*.pdb
+*.ilk
+*.exe
