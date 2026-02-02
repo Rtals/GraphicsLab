@@ -3,5 +3,9 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/솔루션 항목/">
+    <File Path=".gitignore" />
+    <File Path="README.md" />
+  </Folder>
   <Project Path="SoftRenderer/SoftRenderer.vcxproj" Id="2c8d8964-ba87-4b34-a396-8c1b49856388" />
 </Solution>
