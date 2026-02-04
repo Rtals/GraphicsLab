@@ -16,7 +16,7 @@ The primary goal is to deeply understand the **mathematical principles (Linear A
 ## 🚀 Features & Roadmap
 - [x] SDL2 Setup
 - [x] Pixel Plotting
-- [ ] Line Drawing
+- [x] Line Drawing
 - [ ] Triangle Rasterization
 - [ ] 3D Math Library Implementation
 - [ ] 3D Cube Rotation & Transformation

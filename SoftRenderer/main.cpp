@@ -21,6 +21,49 @@ void PutPixel(std::vector<uint32_t>& buffer, int x, int y, uint32_t color) {
 	buffer[index] = color;
 }
 
+// 선 그리는 함수 (y = mx + b)
+void DrawLine(std::vector<uint32_t>& buffer, int x1, int y1, int x2, int y2, uint32_t color) {
+	// Todo 1: 기울기(m) 구하기
+	float m = 0;
+
+	// 세로선일 경우 (기울기가 무한대)
+	// 공식을 사용하지 않고, y값을 1씩 늘려주며 찍어줌
+	if ((x2 - x1) == 0) {
+		if (y2 >= y1) {
+			for (int y = y1; y <= y2; y++) {
+				PutPixel(buffer, x1, y, color);
+			}
+		}
+		else {
+			for (int y = y2; y <= y1; y++) {
+				PutPixel(buffer, x1, y, color);
+			}
+		}
+
+		return;
+	}
+	// 그렇지 않은 경우, 공식을 사용
+	m = static_cast<float>(y2 - y1) / static_cast<float>(x2 - x1);
+
+	// Todo 2: y절편(b) 구하기
+	float b = y1 - m * x1;
+
+	// Todo 3: 점 찍기
+	// x값을 x1부터 x2까지 1씩 증가시키면서 점을 찍어줌
+	if (x2 > x1) {
+		for (int x = x1; x <= x2; x++) {
+			int y = m * x + b;
+			PutPixel(buffer, x, y, color);
+		}
+	}
+	else {
+		for (int x = x2; x <= x1; x++) {
+			int y = m * x + b;
+			PutPixel(buffer, x, y, color);
+		}
+	}
+}
+
 int main(int argc, char* argv[]) {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		return -1;
@@ -55,6 +98,12 @@ int main(int argc, char* argv[]) {
 
 		// 중앙에 빨간 점 찍기
 		PutPixel(pixels, 400, 300, 0xFFFF0000);
+
+		// 화면에 *모양의 빨간 직선 긋기 
+		DrawLine(pixels, 0, 0, 800, 600, 0xFFFF0000);
+		DrawLine(pixels, 0, 600, 800, 0, 0xFFFF0000);
+		DrawLine(pixels, 400, 0, 400, 600, 0xFFFF0000);
+		DrawLine(pixels, 0, 300, 800, 300, 0xFFFF0000);
 
 		SDL_UpdateTexture(texture, NULL, pixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
 		SDL_RenderClear(renderer);
