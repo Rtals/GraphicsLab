@@ -25,3 +25,6 @@ The primary goal is to deeply understand the **mathematical principles (Linear A
 
 ## 📸 Screenshots
 *(Screenshots will be added as development progresses)*
+
+## 📖 Study Notes
+https://shimmering-navy-52b.notion.site/GraphicsLab-2f7ff81a98308071a651de481760ea82?source=copy_link
