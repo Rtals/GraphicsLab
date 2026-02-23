@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <vector>
 #include <cmath>
+#include <algorithm>
 #include <iostream>
 
 const int WINDOW_WIDTH = 800;
@@ -71,6 +72,92 @@ void DrawLine(std::vector<uint32_t>& buffer, int x1, int y1, int x2, int y2, uin
 	}
 }
 
+// 삼각형 그리는 함수
+void DrawAndFilledTriangle(std::vector<uint32_t>& buffer, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
+	// Todo 1: 삼각형의 각 꼭짓점 좌표 정렬
+
+	// 1) y0 > y1 이면 두 점의 위치를 바꾼다. (아래로 갈 수록 값은 커짐)
+	if (y0 > y1) {
+		std::swap(y0, y1);
+		std::swap(x0, x1);
+	}
+	// 2) y1 > y2 이면 두 점의 위치를 바꾼다.
+	if (y1 > y2) {
+		std::swap(y1, y2);
+		std::swap(x1, x2);
+	}
+	// 3) 위에서 y0과 y1의 위치가 바뀌었을 수 있음
+	//    따라서 y0, y1의 바뀐 위치를 한 번 더 비교
+	if (y0 > y1) {
+		std::swap(y0, y1);
+		std::swap(x0, x1);
+	}
+
+	// Todo 2: 삼각형 쪼개기
+	// y2 좌표에서 삼각형 내부를 가로지르는 선 하나를 일직선으로 그어 높이가 똑같은 점 M을 구한다.
+	int My = y1;
+	int Mx = 0;
+
+	if (y2 - y0 == 0) { // 삼각형 높이가 0인 경우 예외처리
+		Mx = x1;
+	}
+	else { // 선형 보간 공식 사용
+		Mx = x0 + static_cast<int>(static_cast<float>(x2 - x0) * (y1 - y0) / (y2 - y0));
+	}
+
+	// Todo 3: 위쪽 삼각형 채우기
+
+	// 1) 역기울기 구하기
+	float inv_slope1 = 0;
+	float inv_slope2 = 0;
+
+	if (y1 - y0 != 0) {
+		inv_slope1 = static_cast<float>(x1 - x0) / (y1 - y0);
+	}
+	if (y2 - y0 != 0) {
+		inv_slope2 = static_cast<float>(x2 - x0) / (y2 - y0);
+	}
+
+	// 2) 시작점 설정
+	float cur_x1 = static_cast<float>(x0);
+	float cur_x2 = static_cast<float>(x0);
+
+	// 3) 한 줄씩 그리기
+	for (int y = y0; y < y1; y++) {
+		int start_x = static_cast<int>(std::min(cur_x1, cur_x2));
+		int end_x = static_cast<int>(std::max(cur_x1, cur_x2));
+
+		DrawLine(buffer, start_x, y, end_x, y, color);
+
+		cur_x1 += inv_slope1;
+		cur_x2 += inv_slope2;
+	}
+
+	// Todo 4: 아래쪽 삼각형 채우기
+
+	// 1) y2 좌표에서 꺾이며 생기는 새 기울기 구하기
+	float inv_slope3 = 0;
+
+	if (y2 - y1 != 0) {
+		inv_slope3 = static_cast<float>(x2 - x1) / (y2 - y1);
+	}
+
+	// 2) cur_x1, cur_x2 위치 다시 조정 
+	cur_x1 = static_cast<float>(x1);
+	cur_x2 = static_cast<float>(Mx);
+
+	// 3) 한 줄씩 그리기
+	for (int y = y1; y <= y2; y++) {
+		int start_x = static_cast<int>(std::min(cur_x1, cur_x2));
+		int end_x = static_cast<int>(std::max(cur_x1, cur_x2));
+
+		DrawLine(buffer, start_x, y, end_x, y, color);
+
+		cur_x1 += inv_slope3;
+		cur_x2 += inv_slope2;
+	}
+}
+
 int main(int argc, char* argv[]) {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		return -1;
@@ -106,11 +193,14 @@ int main(int argc, char* argv[]) {
 		// 중앙에 빨간 점 찍기
 		PutPixel(pixels, 400, 300, 0xFFFF0000);
 
-		// 화면에 *모양의 빨간 직선 긋기 
+		// 화면에 빨간 직선 긋기 
 		DrawLine(pixels, 0, 0, 60, 600, 0xFFFF0000);
 		DrawLine(pixels, 0, 0, 800, 80, 0xFFFF0000);
 		DrawLine(pixels, 100, 0, 100, 600, 0xFFFF0000);
 		DrawLine(pixels, 0, 100, 800, 100, 0xFFFF0000);
+
+		// 화면에 녹색 삼각형 그리기
+		DrawAndFilledTriangle(pixels, 400, 100, 100, 300, 600, 500, 0xFF00FF00);
 
 		SDL_UpdateTexture(texture, NULL, pixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
 		SDL_RenderClear(renderer);
