@@ -7,6 +7,134 @@
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
 
+struct Vec3 {
+	float x, y, z;
+
+	Vec3() : x(0), y(0), z(0) {}
+	Vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
+
+	Vec3 operator+(const Vec3& other) const {
+		return Vec3(x + other.x, y + other.y, z + other.z);
+	}
+
+	Vec3 operator-(const Vec3& other) const {
+		return Vec3(x - other.x, y - other.y, z - other.z);
+	}
+
+	Vec3 operator*(const float other) const {
+		return Vec3(x * other, y * other, z * other);
+	}
+	
+	// 벡터의 길이를 구하는 함수
+	float length() const {
+		return std::sqrt(x * x + y * y + z * z);
+	}
+
+	// 벡터를 정규화하는 함수
+	void normalize() {
+		float norm = length();
+		if (norm != 0) {
+			x /= norm;
+			y /= norm;
+			z /= norm;
+		}
+	}
+
+	// 내적 계산 함수
+	float dot(const Vec3& other) const {
+		return (x * other.x + y * other.y + z * other.z);
+	}
+
+	// 외적 계산 함수
+	Vec3 cross(const Vec3& other) const {
+		return Vec3(y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x);
+	}
+};
+
+struct Mat4x4 {
+	float m[4][4];
+
+	Mat4x4() : m{ 0 } {}
+
+	// 단위 행렬 만드는 함수
+	void makeIdentity() {
+		// 0으로 채워진 새 객체를 나 자신에게 덮어씌움으로써 배열에 들어있을 수 있는 쓰레기 값을 모두 0으로 초기화
+		*this = Mat4x4();
+		for (int i = 0; i < 4; i++) {
+			m[i][i] = 1;
+		}
+	}
+	
+	// 행렬과 벡터를 곱하는 함수
+	Vec3 multiplyVector(const Vec3& other) const {
+		float x = other.x * m[0][0] + other.y * m[1][0] + other.z * m[2][0] + 1 * m[3][0];
+		float y = other.x * m[0][1] + other.y * m[1][1] + other.z * m[2][1] + 1 * m[3][1];
+		float z = other.x * m[0][2] + other.y * m[1][2] + other.z * m[2][2] + 1 * m[3][2];
+		return Vec3(x, y, z);
+	}
+};
+
+void PutPixel(std::vector<uint32_t>& buffer, int x, int y, uint32_t color);
+void DrawLine(std::vector<uint32_t>& buffer, int x1, int y1, int x2, int y2, uint32_t color);
+void DrawAndFilledTriangle(std::vector<uint32_t>& buffer, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
+
+int main(int argc, char* argv[]) {
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		return -1;
+	}
+
+	SDL_Window* window = SDL_CreateWindow(
+		"Pixel Plotting",
+		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+		WINDOW_WIDTH, WINDOW_HEIGHT,
+		SDL_WINDOW_SHOWN
+	);
+
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+	SDL_Texture* texture = SDL_CreateTexture(
+		renderer,
+		SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+		WINDOW_WIDTH, WINDOW_HEIGHT);
+
+	std::vector<uint32_t> pixels(WINDOW_WIDTH * WINDOW_HEIGHT, 0);
+
+	bool isRunning = true;
+	SDL_Event event;
+	while (isRunning) {
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_QUIT) {
+				isRunning = false;
+			}
+		}
+
+		// 화면을 검은색으로 초기화
+		std::fill(pixels.begin(), pixels.end(), 0xFF000000);
+
+		// 중앙에 빨간 점 찍기
+		PutPixel(pixels, 400, 300, 0xFFFF0000);
+
+		// 화면에 빨간 직선 긋기 
+		DrawLine(pixels, 0, 0, 60, 600, 0xFFFF0000);
+		DrawLine(pixels, 0, 0, 800, 80, 0xFFFF0000);
+		DrawLine(pixels, 100, 0, 100, 600, 0xFFFF0000);
+		DrawLine(pixels, 0, 100, 800, 100, 0xFFFF0000);
+
+		// 화면에 녹색 삼각형 그리기
+		DrawAndFilledTriangle(pixels, 400, 100, 100, 300, 600, 500, 0xFF00FF00);
+
+		SDL_UpdateTexture(texture, NULL, pixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
+		SDL_RenderClear(renderer);
+		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_RenderPresent(renderer);
+	}
+	SDL_DestroyTexture(texture);
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
+
+	return 0;
+}
+
 // 화면에 픽셀 찍는 함수
 void PutPixel(std::vector<uint32_t>& buffer, int x, int y, uint32_t color) {
 	// Todo 1: 범위 검사 작성
@@ -156,61 +284,4 @@ void DrawAndFilledTriangle(std::vector<uint32_t>& buffer, int x0, int y0, int x1
 		cur_x1 += inv_slope3;
 		cur_x2 += inv_slope2;
 	}
-}
-
-int main(int argc, char* argv[]) {
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		return -1;
-	}
-
-	SDL_Window* window = SDL_CreateWindow(
-		"Pixel Plotting",
-		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		WINDOW_WIDTH, WINDOW_HEIGHT,
-		SDL_WINDOW_SHOWN
-	);
-
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
-	SDL_Texture* texture = SDL_CreateTexture(
-		renderer,
-		SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-		WINDOW_WIDTH, WINDOW_HEIGHT);
-
-	std::vector<uint32_t> pixels(WINDOW_WIDTH * WINDOW_HEIGHT, 0);
-
-	bool isRunning = true;
-	SDL_Event event;
-	while (isRunning) {
-		while (SDL_PollEvent(&event)) {
-			if (event.type == SDL_QUIT) {
-				isRunning = false;
-			}
-		}
-
-		// 화면을 검은색으로 초기화
-		std::fill(pixels.begin(), pixels.end(), 0xFF000000);
-
-		// 중앙에 빨간 점 찍기
-		PutPixel(pixels, 400, 300, 0xFFFF0000);
-
-		// 화면에 빨간 직선 긋기 
-		DrawLine(pixels, 0, 0, 60, 600, 0xFFFF0000);
-		DrawLine(pixels, 0, 0, 800, 80, 0xFFFF0000);
-		DrawLine(pixels, 100, 0, 100, 600, 0xFFFF0000);
-		DrawLine(pixels, 0, 100, 800, 100, 0xFFFF0000);
-
-		// 화면에 녹색 삼각형 그리기
-		DrawAndFilledTriangle(pixels, 400, 100, 100, 300, 600, 500, 0xFF00FF00);
-
-		SDL_UpdateTexture(texture, NULL, pixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
-		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, texture, NULL, NULL);
-		SDL_RenderPresent(renderer);
-	}
-	SDL_DestroyTexture(texture);
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
-
-	return 0;
 }

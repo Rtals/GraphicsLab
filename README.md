@@ -18,7 +18,7 @@ The primary goal is to deeply understand the **mathematical principles (Linear A
 - [x] Pixel Plotting
 - [x] Line Drawing
 - [x] Triangle Rasterization
-- [ ] 3D Math Library Implementation
+- [x] 3D Math Library Implementation
 - [ ] 3D Cube Rotation & Transformation
 - [ ] Camera System & Viewport Clipping
 - [ ] Lighting & Shading
