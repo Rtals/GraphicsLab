@@ -59,11 +59,47 @@ struct Mat4x4 {
 		}
 	}
 
-	// 행렬과 벡터를 곱하는 함수
+	// 기존 벡터에 행렬을 곱해서 새로운 위치의 벡터를 생성하는 함수
 	Vec3 multiplyVector(const Vec3& other) const {
 		float x = other.x * m[0][0] + other.y * m[1][0] + other.z * m[2][0] + 1 * m[3][0];
 		float y = other.x * m[0][1] + other.y * m[1][1] + other.z * m[2][1] + 1 * m[3][1];
 		float z = other.x * m[0][2] + other.y * m[1][2] + other.z * m[2][2] + 1 * m[3][2];
 		return Vec3(x, y, z);
+	}
+
+	// X축 회전 함수
+	static Mat4x4 makeRotationX(float radian) {
+		Mat4x4 matrix;
+		matrix.makeIdentity();
+		matrix.m[1][1] = std::cos(radian);
+		matrix.m[2][2] = std::cos(radian);
+		matrix.m[1][2] = std::sin(radian);
+		matrix.m[2][1] = -std::sin(radian);
+
+		return matrix;
+	}
+
+	// Y축 회전 함수
+	static Mat4x4 makeRotationY(float radian) {
+		Mat4x4 matrix;
+		matrix.makeIdentity();
+		matrix.m[0][0] = std::cos(radian);
+		matrix.m[2][2] = std::cos(radian);
+		matrix.m[0][2] = -std::sin(radian);
+		matrix.m[2][0] = std::sin(radian);
+
+		return matrix;
+	}
+
+	// Z축 회전 함수
+	static Mat4x4 makeRotationZ(float radian) {
+		Mat4x4 matrix;
+		matrix.makeIdentity();
+		matrix.m[0][0] = std::cos(radian);
+		matrix.m[1][1] = std::cos(radian);
+		matrix.m[0][1] = std::sin(radian);
+		matrix.m[1][0] = -std::sin(radian);
+
+		return matrix;
 	}
 };
