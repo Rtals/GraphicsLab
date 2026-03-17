@@ -2,6 +2,11 @@
 #include <cmath>
 #include <algorithm>
 
+// 화면 채우는 함수
+void FillScreen(std::vector<uint32_t>& buffer, uint32_t color) {
+	std::fill(buffer.begin(), buffer.end(), color);
+}
+
 // 화면에 픽셀 찍는 함수
 void PutPixel(std::vector<uint32_t>& buffer, int x, int y, uint32_t color) {
 	// Todo 1: 범위 검사 작성
@@ -150,5 +155,57 @@ void DrawAndFilledTriangle(std::vector<uint32_t>& buffer, int x0, int y0, int x1
 
 		cur_x1 += inv_slope3;
 		cur_x2 += inv_slope2;
+	}
+}
+
+// 3D 메쉬를 그리는 함수
+void DrawMesh(std::vector<uint32_t>& buffer, const Mesh& mesh, const Mat4x4& transform, uint32_t color) {
+	// 큐브의 모든 삼각형 순회
+	for (auto tri : mesh.tris) {
+		Triangle translatedTri;
+
+		for (int i = 0; i < 3; i++) {
+			// 큐브가 원점을 중심으로 돌아가도록 큐브의 중심을 원점으로 조정
+			tri.p[i].x -= 0.5;
+			tri.p[i].y -= 0.5;
+			tri.p[i].z -= 0.5;
+
+			// 인자로 받은 변환 행렬 적용 
+			Vec3 rotated_vec = transform.multiplyVector(tri.p[i]);
+
+			// Z축으로 밀어넣어 카메라에서 멀어지도록 조정 (Z값이 0이면 카메라 위치와 겹침)
+			rotated_vec.z += 3;
+
+			// 변환할 위치 저장
+			translatedTri.p[i] = rotated_vec;
+		}
+
+		// 벡터의 뺄셈: 삼각형의 한 꼭짓점에서 출발하는 두 개의 선(벡터) 구하기
+		Vec3 tri_line1 = translatedTri.p[1] - translatedTri.p[0];
+		Vec3 tri_line2 = translatedTri.p[2] - translatedTri.p[0];
+
+		// 외적: 두 벡터의 외적 계산을 통해 두 벡터에 모두 수직인 벡터 구하기 (->면이 바라보는 방향)
+		Vec3 normal_vec = tri_line1.cross(tri_line2);
+
+		// 카메라의 시선 벡터 구하기 (카메라 위치가 (0,0,0)이라면, 점의 위치가 카메라에서 뻗어나간 시선 벡터)
+		Vec3 camera_vec = translatedTri.p[0];
+
+		// 내적: 카메라의 시선 방향과 면의 시선 방향 비교 (법선 벡터와 카메라 시선 벡터의 내적 < 0이면, 앞면)
+		if (normal_vec.dot(camera_vec) < 0) {
+			Triangle projectedTri;
+
+			for (int i = 0; i < 3; i++) {
+				// 2D 화면으로 투영 (원근법 적용)
+				projectedTri.p[i].x = translatedTri.p[i].x / translatedTri.p[i].z;
+				projectedTri.p[i].y = translatedTri.p[i].y / translatedTri.p[i].z;
+
+				// 화면 중앙으로 좌표 옮기기 & 크기 키우기 (투영된 값이 매우 작기 때문에)
+				projectedTri.p[i].x = (projectedTri.p[i].x + 1) * 0.5 * WINDOW_WIDTH;
+				projectedTri.p[i].y = (projectedTri.p[i].y + 1) * 0.5 * WINDOW_HEIGHT;
+			}
+
+			// 그리기
+			DrawAndFilledTriangle(buffer, projectedTri.p[0].x, projectedTri.p[0].y, projectedTri.p[1].x, projectedTri.p[1].y, projectedTri.p[2].x, projectedTri.p[2].y, color);
+		}
 	}
 }
