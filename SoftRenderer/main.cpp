@@ -34,23 +34,18 @@ int main(int argc, char* argv[]) {
 		// 남쪽 면 (South Face)
 		{ { {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f} } },
 		{ { {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f} } },
-
 		// 동쪽 면 (East Face)
 		{ { {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f} } },
 		{ { {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f} } },
-
 		// 북쪽 면 (North Face)
 		{ { {1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f} } },
 		{ { {1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f} } },
-
 		// 서쪽 면 (West Face)
 		{ { {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f} } },
 		{ { {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f} } },
-
 		// 위쪽 면 (Top Face)
 		{ { {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f} } },
 		{ { {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f} } },
-
 		// 아래쪽 면 (Bottom Face)
 		{ { {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f} } },
 		{ { {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} } }
@@ -59,8 +54,12 @@ int main(int argc, char* argv[]) {
 	// 색상
 	Color color;
 
-	// 회전 각도
-	float theta = 0;
+	// 게임 오브젝트 생성 및 초기화
+	GameObject cube;
+	cube.mesh = cubeMesh;
+	cube.scale = Vec3(1, 1, 1);
+	cube.position = Vec3(0, 0, 3);
+	cube.rotation = Vec3(0, 0, 0);
 
 	while (isRunning) {
 		while (SDL_PollEvent(&event)) {
@@ -72,14 +71,12 @@ int main(int argc, char* argv[]) {
 		// 화면 검정색으로 채우기
 		FillScreen(pixels, color.black);
 
-		// 회전 행렬 생성 (현재 Y축만 사용)
-		Mat4x4 matRotY = Mat4x4::makeRotationY(theta);
+		// 오브젝트 상태 업데이트
+		cube.scale.x += 0.0001;
+		cube.rotation.y += 0.005;
 
 		// 3D 큐브 그리기
-		DrawMesh(pixels, cubeMesh, matRotY, color.red);
-		
-		// 다음 프레임(회전)을 위해 각도 증가
-		theta += 0.005;
+		DrawGameObject(pixels, cube);
 
 		SDL_UpdateTexture(texture, NULL, pixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
 		SDL_RenderClear(renderer);

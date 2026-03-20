@@ -108,90 +108,94 @@ void DrawAndFilledTriangle(std::vector<uint32_t>& buffer, int x0, int y0, int x1
 	// Todo 3: 위쪽 삼각형 채우기
 
 	// 1) 역기울기 구하기
-	float inv_slope1 = 0;
-	float inv_slope2 = 0;
+	float invSlope1 = 0;
+	float invSlope2 = 0;
 
 	if (y1 - y0 != 0) {
-		inv_slope1 = static_cast<float>(x1 - x0) / (y1 - y0);
+		invSlope1 = static_cast<float>(x1 - x0) / (y1 - y0);
 	}
 	if (y2 - y0 != 0) {
-		inv_slope2 = static_cast<float>(x2 - x0) / (y2 - y0);
+		invSlope2 = static_cast<float>(x2 - x0) / (y2 - y0);
 	}
 
 	// 2) 시작점 설정
-	float cur_x1 = static_cast<float>(x0);
-	float cur_x2 = static_cast<float>(x0);
+	float curX1 = static_cast<float>(x0);
+	float curX2 = static_cast<float>(x0);
 
 	// 3) 한 줄씩 그리기
 	for (int y = y0; y < y1; y++) {
-		int start_x = static_cast<int>(std::min(cur_x1, cur_x2));
-		int end_x = static_cast<int>(std::max(cur_x1, cur_x2));
+		int startX = static_cast<int>(std::min(curX1, curX2));
+		int endX = static_cast<int>(std::max(curX1, curX2));
 
-		DrawLine(buffer, start_x, y, end_x, y, color);
+		DrawLine(buffer, startX, y, endX, y, color);
 
-		cur_x1 += inv_slope1;
-		cur_x2 += inv_slope2;
+		curX1 += invSlope1;
+		curX2 += invSlope2;
 	}
 
 	// Todo 4: 아래쪽 삼각형 채우기
 
 	// 1) y2 좌표에서 꺾이며 생기는 새 기울기 구하기
-	float inv_slope3 = 0;
+	float invSlope3 = 0;
 
 	if (y2 - y1 != 0) {
-		inv_slope3 = static_cast<float>(x2 - x1) / (y2 - y1);
+		invSlope3 = static_cast<float>(x2 - x1) / (y2 - y1);
 	}
 
 	// 2) cur_x1, cur_x2 위치 다시 조정 
-	cur_x1 = static_cast<float>(x1);
-	cur_x2 = static_cast<float>(Mx);
+	curX1 = static_cast<float>(x1);
+	curX2 = static_cast<float>(Mx);
 
 	// 3) 한 줄씩 그리기
 	for (int y = y1; y <= y2; y++) {
-		int start_x = static_cast<int>(std::min(cur_x1, cur_x2));
-		int end_x = static_cast<int>(std::max(cur_x1, cur_x2));
+		int startX = static_cast<int>(std::min(curX1, curX2));
+		int endX = static_cast<int>(std::max(curX1, curX2));
 
-		DrawLine(buffer, start_x, y, end_x, y, color);
+		DrawLine(buffer, startX, y, endX, y, color);
 
-		cur_x1 += inv_slope3;
-		cur_x2 += inv_slope2;
+		curX1 += invSlope3;
+		curX2 += invSlope2;
 	}
 }
 
-// 3D 메쉬를 그리는 함수
-void DrawMesh(std::vector<uint32_t>& buffer, const Mesh& mesh, const Mat4x4& transform, uint32_t color) {
+// 3D 게임 오브젝트를 그리는 함수
+void DrawGameObject(std::vector<uint32_t>& buffer,const GameObject& obj) {
+	Mat4x4 matScale = Mat4x4::MakeScale(obj.scale.x, obj.scale.y, obj.scale.z);
+	Mat4x4 matRotY = Mat4x4::MakeRotationY(obj.rotation.y);
+	Mat4x4 matTrans = Mat4x4::MakeTranslation(obj.position.x, obj.position.y, obj.position.z);
+
 	// 큐브의 모든 삼각형 순회
-	for (auto tri : mesh.tris) {
+	for (auto tri : obj.mesh.tris) {
 		Triangle translatedTri;
 
 		for (int i = 0; i < 3; i++) {
+			Vec3 v = tri.p[i];
 			// 큐브가 원점을 중심으로 돌아가도록 큐브의 중심을 원점으로 조정
-			tri.p[i].x -= 0.5;
-			tri.p[i].y -= 0.5;
-			tri.p[i].z -= 0.5;
+			v.x -= 0.5;
+			v.y -= 0.5;
+			v.z -= 0.5;
 
-			// 인자로 받은 변환 행렬 적용 
-			Vec3 rotated_vec = transform.multiplyVector(tri.p[i]);
-
-			// Z축으로 밀어넣어 카메라에서 멀어지도록 조정 (Z값이 0이면 카메라 위치와 겹침)
-			rotated_vec.z += 3;
+			// 인자로 받은 변환 행렬 적용 [S -> R -> T]순서
+			v = matScale.MultiplyVector(v);
+			v = matRotY.MultiplyVector(v);
+			v = matTrans.MultiplyVector(v);
 
 			// 변환할 위치 저장
-			translatedTri.p[i] = rotated_vec;
+			translatedTri.p[i] = v;
 		}
 
 		// 벡터의 뺄셈: 삼각형의 한 꼭짓점에서 출발하는 두 개의 선(벡터) 구하기
-		Vec3 tri_line1 = translatedTri.p[1] - translatedTri.p[0];
-		Vec3 tri_line2 = translatedTri.p[2] - translatedTri.p[0];
+		Vec3 triLine1 = translatedTri.p[1] - translatedTri.p[0];
+		Vec3 triLine2 = translatedTri.p[2] - translatedTri.p[0];
 
 		// 외적: 두 벡터의 외적 계산을 통해 두 벡터에 모두 수직인 벡터 구하기 (->면이 바라보는 방향)
-		Vec3 normal_vec = tri_line1.cross(tri_line2);
+		Vec3 normalVec = triLine1.Cross(triLine2);
 
 		// 카메라의 시선 벡터 구하기 (카메라 위치가 (0,0,0)이라면, 점의 위치가 카메라에서 뻗어나간 시선 벡터)
-		Vec3 camera_vec = translatedTri.p[0];
+		Vec3 cameraVec = translatedTri.p[0];
 
 		// 내적: 카메라의 시선 방향과 면의 시선 방향 비교 (법선 벡터와 카메라 시선 벡터의 내적 < 0이면, 앞면)
-		if (normal_vec.dot(camera_vec) < 0) {
+		if (normalVec.Dot(cameraVec) < 0) {
 			Triangle projectedTri;
 
 			for (int i = 0; i < 3; i++) {
@@ -205,7 +209,7 @@ void DrawMesh(std::vector<uint32_t>& buffer, const Mesh& mesh, const Mat4x4& tra
 			}
 
 			// 그리기
-			DrawAndFilledTriangle(buffer, projectedTri.p[0].x, projectedTri.p[0].y, projectedTri.p[1].x, projectedTri.p[1].y, projectedTri.p[2].x, projectedTri.p[2].y, color);
+			DrawAndFilledTriangle(buffer, projectedTri.p[0].x, projectedTri.p[0].y, projectedTri.p[1].x, projectedTri.p[1].y, projectedTri.p[2].x, projectedTri.p[2].y, obj.color.red);
 		}
 	}
 }
